@@ -30,14 +30,11 @@ spec:
           - path: /
             pathType: Prefix
             backend:
-              service:
-                {{ if .Values.kong.enabled }}
-                name: kong-proxy
-                port:
-                  number: 8000
-                {{ else }}
-                name: graphdb-master-1
-                port:
-                  number: 7200
-                {{ end }}
+              {{ if .Values.kong.enabled }}
+              serviceName: kong-proxy
+              servicePort: 8000
+              {{ else }}
+              serviceName: graphdb-master-1
+              servicePort: 7200
+              {{ end }}
 {{- end }}

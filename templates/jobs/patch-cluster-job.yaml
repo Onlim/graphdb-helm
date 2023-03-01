@@ -11,7 +11,6 @@ metadata:
     "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
     "helm.sh/hook-weight": "2"
 spec:
-  ttlSecondsAfterFinished: 300
   template:
     spec:
       imagePullSecrets:

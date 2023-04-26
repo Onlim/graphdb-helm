@@ -1,17 +1,18 @@
-{{- if gt (int .Values.graphdb.clusterConfig.nodesCount) 1 }}
+{{- $configs := (.Values.graphdb.configs | default dict) }}
+{{- if $configs.provisionRepositoriesConfigMap }}
 apiVersion: {{ $.Values.versions.job }}
 kind: Job
 metadata:
-  name: patch-cluster-job
+  name: provision-repositories-job
   labels:
     {{- include "graphdb.labels" . | nindent 4 }}
   annotations:
-    "helm.sh/hook": post-upgrade, post-rollback
+    "helm.sh/hook": post-install, post-upgrade, post-rollback
     "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
-    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-weight": "4"
 spec:
   ttlSecondsAfterFinished: 300
-  backoffLimit: 4
+  backoffLimit: 3
   template:
     spec:
       restartPolicy: Never
@@ -20,7 +21,7 @@ spec:
       securityContext:
         {{- $.Values.graphdb.jobPodSecurityContext | toYaml | nindent 8 }}
       containers:
-        - name: patch-cluster
+        - name: provision-repositories
           image: {{ include "renderFullImageName" (dict "globalRegistry" $.Values.global.imageRegistry "image" $.Values.images.graphdb) }}
           envFrom:
             - secretRef:
@@ -31,20 +32,21 @@ spec:
               mountPath: /tmp
             - name: graphdb-utils
               mountPath: /tmp/utils
-            - name: cluster-config
-              mountPath: /tmp/cluster-config
+            - name: repositories-config
+              mountPath: /tmp/repositories-config
           command: ['bash']
           args:
-            - "/tmp/utils/update-cluster.sh"
-            - "patchCluster"
-            - "/tmp/cluster-config/cluster-config.json"
+            - "/tmp/utils/graphdb.sh"
+            - "createRepositoryFromFile"
+            - "{{ .Values.graphdb.clusterConfig.nodesCount }}"
+            - "/tmp/repositories-config"
       volumes:
         - name: job-temp
           emptyDir:
             sizeLimit: 10Mi
-        - name: cluster-config
+        - name: repositories-config
           configMap:
-            name: graphdb-cluster-config-configmap
+            name: {{ .Values.graphdb.configs.provisionRepositoriesConfigMap }}
         - name: graphdb-utils
           configMap:
             name: graphdb-utils-configmap

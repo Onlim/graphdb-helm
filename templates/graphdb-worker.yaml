@@ -86,7 +86,7 @@ spec:
           envFrom:
             - configMapRef:
                 name: graphdb-worker-{{ $worker_index }}-configmap
-            {{- with .Values.graphdb.workers.extraEnvFrom }}
+            {{- with $.Values.graphdb.workers.extraEnvFrom }}
               {{- tpl ( toYaml . ) $ | nindent 12 }}
             {{- end }}
           volumeMounts:
